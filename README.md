@@ -52,61 +52,6 @@ pip install -r requirements.txt
 }
 ```
 
-## Packaging
 
-Before packaging make sure to create a new tag. Use <Major>.<Minor> versioning. 
-Bump minor version for bug fixes or non-interface related changes.
-Bump major version for major refactor or API interface changes or improvements.
-
-After creating the tag update changelog. The easiest way to do so is via git changelog (see package git-extras)
-Remove any non-informative entries from the changelog.
-```
-git changelog
-```
-
-To package the API:
-```
-cd ..
-. ./flexibility-forecast-api/package.sh
-```
-
-A zip of the form flexibility-forecast-api-<TAG>.zip will be created with temporary files removed.
-
-## Deployment (Windows)
-
-* stop Windows service that controls the server
-* remove .pyc files from server directory
-* unzip and copy over files from package flexibility-forecast-api-<TAG>.zip (by default c:\slutils\drcs-api)
-* start Windows service
-
-## Server
-* forecasts are available through Falcon REST API. REST API must be served through WSGI server. We use waitress, because its cross-platform.
-```
-waitress-serve --listen=<LOCAL_IP>:<FREE_PORT> api.prediction_api:api
-```
-
-## Windows System Service
-
-* Make sure to install NSSM http://nssm.cc/download
-
-* Create a run\_forecast\_api.bat file with the following contents
-```
-cmd /k "cd /d C:\slutils\drcs-api\ & .\Scripts\activate & waitress-serve --listen=10.243.120.3:8889 api.prediction_api:api"
-```
-* Run and set path to created .bat file in shown UI
-```
-nssm install Forecast API Server
-```
-* Start the service.
-
-
-## API
-* \<IP\>:\<PORT\>/newData accepts the following JSON format:
-```
-[{
-    'dataSourceValuesGroupedByDate': {<DS_ID>: {<DATE>: <VALUE>}},
-    'source' : <SOURCE_URL>
-}]
-```
-* Received data is saved (created or updated) in local SQL database. Forecast module is called at the end to calculate forecast based on the new received data
-* New forecast is saved to database and sent as POST request to subscriber in the same JSON format
+## Test data
+https://data.london.gov.uk/dataset/smartmeter-energy-use-data-in-london-households

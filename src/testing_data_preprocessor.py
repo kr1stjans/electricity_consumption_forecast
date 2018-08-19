@@ -165,86 +165,12 @@ class Preprocessor(TransformerMixin):
 
         if not os.path.isfile('cache/-1_x_data.pickle'):
             print("Transforming data for mm_id=-1")
-            x_values = pd.DataFrame()
-
-            values_by_date = {}
-
-            last_2 = collections.deque([], 2)
-            last_4 = collections.deque([], 4)
-            last_12 = collections.deque([], 12)
-            last_24 = collections.deque([], 24)
-            last_48 = collections.deque([], 48)
-            last_96 = collections.deque([], 96)
-            last_144 = collections.deque([], 144)
-            last_192 = collections.deque([], 192)
-            # last_672 = collections.deque([], 672)
-            # last_1344 = collections.deque([], 1344)
-
-            for idx, row in enumerate(X):
-                if idx % 1000 == 0:
-                    print("transforming @ idx: " + str(idx))
-
-                current_date = row[0]
-
-                # need more than FORECAST_SIZE values to start calculations. skip first FORECAST_SIZE values
-                if len(values_by_date) >= self.FORECAST_SIZE:
-                    val_minus_1 = self.get_last_known_value(values_by_date, current_date)
-
-                    last_2.append(val_minus_1)
-                    last_4.append(val_minus_1)
-                    last_12.append(val_minus_1)
-                    last_24.append(val_minus_1)
-                    last_48.append(val_minus_1)
-                    last_96.append(val_minus_1)
-                    last_144.append(val_minus_1)
-                    last_192.append(val_minus_1)
-                    # last_672.append(val_minus_1)
-                    # last_1344.append(val_minus_1)
-
-                    weekday = current_date.weekday()
-                    season = str(self.get_season(current_date))
-
-                    constructed_row = {'season': season,
-                                       'season_weekday': season + '_' + str(weekday),
-                                       'season_weekday_hour': season + '_' + str(weekday) + '_' + str(
-                                           current_date.hour),
-                                       'season_hour': season + '_' + str(current_date.hour),
-                                       'month': current_date.month,
-                                       'weekday': weekday,
-                                       'hour': str(current_date.hour),
-                                       'is_weekend': 1 if weekday == 5 or weekday == 6 else 0,
-                                       'is_holiday': self.is_slovenian_holiday(current_date),
-                                       'temperature': row[1],
-                                       'radiation': row[2],
-                                       'wind': row[3],
-                                       'wind_direction': row[4],
-                                       'wind_potential': row[5],
-                                       'relative_moisture': row[6],
-                                       'last_val': val_minus_1,
-                                       **self.get_value_based_features(last_2),
-                                       **self.get_value_based_features(last_4),
-                                       **self.get_value_based_features(last_12),
-                                       **self.get_value_based_features(last_24),
-                                       **self.get_value_based_features(last_48),
-                                       **self.get_value_based_features(last_96),
-                                       **self.get_value_based_features(last_144),
-                                       **self.get_value_based_features(last_192),
-                                       # **self.get_value_based_features(last_672)
-                                       # **self.get_value_based_features(last_1344)
-                                       }
-
-                    x_values = x_values.append(
-                        constructed_row,
-                        ignore_index=True)
-
-                values_by_date[current_date] = y[idx]
 
             # get dummies from categorical features
-            x_values = self.one_hot_encoding(x_values)
+            # x_values = self.one_hot_encoding(x_values)
 
-            y = y[:len(x_values)]
 
-            pd.to_pickle(x_values, 'cache/-1_x_data.pickle')
+            pd.to_pickle(X, 'cache/-1_x_data.pickle')
             pd.to_pickle(y, 'cache/-1_y_data.pickle')
         else:
             print("Found cached data for mm_id=-1")
@@ -258,7 +184,6 @@ class Preprocessor(TransformerMixin):
         # x_values = pca.transform(x_values)
 
         # normalize
-
         # x_values = VarianceThreshold(threshold=0.01).fit_transform(x_values)
 
         # x_values = MinMaxScaler().fit_transform(x_values)

@@ -13,3 +13,8 @@ __pycache__
 *.pyc
 *.swp
 credentials.json
+lib64
+pyvenv.cfg
+share
+pip-selfcheck.json
+test/cache

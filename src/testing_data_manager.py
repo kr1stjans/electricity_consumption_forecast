@@ -7,7 +7,6 @@ FORECAST_SIZE = 48
 
 
 class DataProcessor:
-
     @staticmethod
     def get_public_data():
         df = pd.read_csv('../data/data_MAC000002.csv', sep=',', header=None, usecols=['dt', 'value'],
@@ -21,7 +20,18 @@ class DataProcessor:
                                        'apparentTemperature', 'windSpeed', 'precipType', 'humidity', 'summary'])
 
         merged = pd.merge(df, weather, how='left', left_index=True, right_index=True)
-        merged.fillna(method='bfill', inplace=True, axis='index')
+
+        # remove duplicated rows
+        merged = merged[~merged.index.duplicated(keep='first')]
+
+        # fill missing indexes
+        merged = merged.asfreq(pd.offsets.Minute(30))
+
+        # fill missing values
+        merged.fillna(method='backfill', inplace=True, axis='index')
+
+        assert merged.isnull().values.any() == False
+        assert merged.index.duplicated().any() == False
 
         return merged
 

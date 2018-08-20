@@ -9,7 +9,7 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score
 from sklearn.preprocessing import MinMaxScaler
 from statsmodels.tsa.ar_model import AR
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima_model import ARIMA, ARMA
 from statsmodels.tsa.stattools import adfuller
 
 from src.testing_data_preprocessor import Preprocessor
@@ -19,7 +19,7 @@ FORECAST_SIZE = 48
 
 
 def get_identity_X_y_pair(data):
-    return data, data['value']
+    return data['value'], data['value']
 
 
 def get_baseline_forecast(x_values, y_values, train_end_index):
@@ -29,7 +29,7 @@ def get_baseline_forecast(x_values, y_values, train_end_index):
     :param x_values_length: 
     :return: 
     """
-    return y_values[train_end_index - FORECAST_SIZE:train_end_index]
+    return y_values[train_end_index -FORECAST_SIZE:train_end_index]
 
 
 def get_AR_forecast(X, y, train_size):
@@ -39,21 +39,12 @@ def get_AR_forecast(X, y, train_size):
     :param train_size: 
     :return: 
     """
-    model = AR(X['value'][:train_size], dates=X.index, freq=)
+    model = AR(X[:train_size], dates=X[:train_size].index, freq=pd.offsets.Minute(30))
     fitted_model = model.fit(maxlag=48)
     return fitted_model.predict(start=train_size, end=train_size + (FORECAST_SIZE - 1))
 
 
-def get_ARIMA_forecast(X, y, train_size):
-    """
-    Get Autoregressive model result as prediction.
-    :param values:
-    :param train_size:
-    :return:
-    """
-    model = ARIMA(X[:train_size], order=(16, 0, 1))
-    fitted_model = model.fit()
-    return fitted_model.predict(start=train_size, end=train_size + (FORECAST_SIZE - 1))
+cached_ARIMA_model = None
 
 
 def get_LR_forecast(x_values, y_values, train_end_index):
@@ -67,36 +58,6 @@ def get_LR_forecast(x_values, y_values, train_end_index):
     """
     x_test = x_values[train_end_index:train_end_index + FORECAST_SIZE]
     model = LinearRegression()
-    model.fit(x_values[:train_end_index], y_values[:train_end_index])
-    return model.predict(X=x_test)
-
-
-def get_ridge_forecast(x_values, y_values, train_end_index):
-    """
-    Get Ridge model result as prediction.
-    :param x_values: 
-    :param y_values: 
-    :param train_end_index: 
-    :param model: 
-    :return: 
-    """
-    x_test = x_values[train_end_index:train_end_index + FORECAST_SIZE]
-    model = Ridge(alpha=0.05)
-    model.fit(x_values[:train_end_index], y_values[:train_end_index])
-    return model.predict(X=x_test)
-
-
-def get_lasso_forecast(x_values, y_values, train_end_index):
-    """
-    Get Lasso model result as prediction.
-    :param x_values: 
-    :param y_values: 
-    :param train_end_index: 
-    :param model: 
-    :return: 
-    """
-    x_test = x_values[train_end_index:train_end_index + FORECAST_SIZE]
-    model = Lasso(alpha=0.05)
     model.fit(x_values[:train_end_index], y_values[:train_end_index])
     return model.predict(X=x_test)
 
@@ -250,11 +211,7 @@ def plot_data(df):
 
 df = DataProcessor.get_public_data()
 
-cross_validate_model(df, get_baseline_forecast, get_identity_X_y_pair)
-# cross_validate_model(df, get_LR_forecast, DataProcessor.get_LR_transform)
-# cross_validate_model(df, get_lasso_forecast, DataProcessor.get_LR_transform)
-# cross_validate_model(df, get_ridge_forecast, DataProcessor.get_LR_transform)
-# cross_validate_model(df, get_LR_forecast, get_LR_transform)
-cross_validate_model(df, get_AR_forecast, get_identity_X_y_pair)
-# cross_validate_model(data, get_ARIMA_prediction, get_identity_transform)
+cross_validate_model(df.copy(), get_baseline_forecast, get_identity_X_y_pair)
+# cross_validate_model(df.copy(), get_LR_forecast, DataProcessor.get_LR_transform)
+# cross_validate_model(df.copy(), get_AR_forecast, get_identity_X_y_pair)
 # cross_validate_model(data, get_LSTM_prediction, get_LSTM_transform)

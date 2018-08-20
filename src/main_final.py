@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-from keras import Sequential
-from keras.layers import LSTM, Dense
-from keras.models import model_from_json
+# from keras import Sequential
+# from keras.layers import LSTM, Dense
+# from keras.models import model_from_json
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score
 from sklearn.preprocessing import MinMaxScaler
@@ -13,7 +13,7 @@ from statsmodels.tsa.arima_model import ARIMA
 from statsmodels.tsa.stattools import adfuller
 
 from src.testing_data_preprocessor import Preprocessor
-from src.testing_data_manager import DataManager
+from src.testing_data_manager import DataProcessor
 
 FORECAST_SIZE = 48
 
@@ -32,26 +32,26 @@ def get_baseline_forecast(x_values, y_values, train_end_index):
     return y_values[train_end_index - FORECAST_SIZE:train_end_index]
 
 
-def get_AR_forecast(x_values, y_values, train_size):
+def get_AR_forecast(X, y, train_size):
     """
     Get Autoregressive model result as prediction.
     :param values: 
     :param train_size: 
     :return: 
     """
-    model = AR(x_values[:train_size])
-    fitted_model = model.fit(maxlag=96)
+    model = AR(X['value'][:train_size], dates=X.index, freq=)
+    fitted_model = model.fit(maxlag=48)
     return fitted_model.predict(start=train_size, end=train_size + (FORECAST_SIZE - 1))
 
 
-def get_ARIMA_forecast(x_values, y_values, train_size):
+def get_ARIMA_forecast(X, y, train_size):
     """
     Get Autoregressive model result as prediction.
     :param values:
     :param train_size:
     :return:
     """
-    model = ARIMA(x_values[:train_size], order=(16, 0, 1))
+    model = ARIMA(X[:train_size], order=(16, 0, 1))
     fitted_model = model.fit()
     return fitted_model.predict(start=train_size, end=train_size + (FORECAST_SIZE - 1))
 
@@ -106,6 +106,7 @@ def get_LR_transform(df):
     return x_values, y_values
 
 
+'''
 def get_LSTM_prediction(x_values, y_values, train_size):
     # extract train data as in real world scenario - we don't know anything else
     x_train = x_values[:train_size]
@@ -175,27 +176,28 @@ def get_LSTM_transform(data):
     y_values = np.array(y_values, dtype=np.float64).T
 
     return np.array(data[:, 0:1]), y_values
+'''
 
 
-def cross_validate_model(df, prediction_fn, get_X_y_pair):
-    X, y_values = get_X_y_pair(df)
+def cross_validate_model(df, forecast_fn, get_X_y):
+    X, y = get_X_y(df)
 
     rmse_sum = 0
     abs_error_sum = 0
     variance_sum = 0
 
     cnt = 0
-    # start after one year of data (48*365 values) and continue with steps of one day (48 values)
-    for train_end_index in range(FORECAST_SIZE * 365, len(df) - FORECAST_SIZE, FORECAST_SIZE):
+    # start after one year of data (48*365 values) and continue with steps of FORECAST_SIZE
+    for train_end_index in range(FORECAST_SIZE * 365, len(df) - FORECAST_SIZE * 2, FORECAST_SIZE):
         if cnt % 50 == 0:
             print('Cross validating @', train_end_index, "measurement place", "-1")
 
-        y_hat = prediction_fn(X, y_values, train_end_index)
-        y = y_values[train_end_index:train_end_index + FORECAST_SIZE]
+        y_hat = forecast_fn(X, y, train_end_index)
+        y_actual = y[train_end_index:train_end_index + FORECAST_SIZE]
 
-        rmse_sum += mean_squared_error(y, y_hat) ** 0.5
-        abs_error_sum += mean_absolute_error(y, y_hat)
-        variance_sum += explained_variance_score(y, y_hat)
+        rmse_sum += mean_squared_error(y_actual, y_hat) ** 0.5
+        abs_error_sum += mean_absolute_error(y_actual, y_hat)
+        variance_sum += explained_variance_score(y_actual, y_hat)
         cnt += 1
 
     print('avg rmse', rmse_sum / cnt)
@@ -246,11 +248,13 @@ def plot_data(df):
     plt.show()
 
 
-df = DataManager.get_public_data()
+df = DataProcessor.get_public_data()
 
 cross_validate_model(df, get_baseline_forecast, get_identity_X_y_pair)
-cross_validate_model(df, get_LR_forecast, get_LR_transform)
+# cross_validate_model(df, get_LR_forecast, DataProcessor.get_LR_transform)
+# cross_validate_model(df, get_lasso_forecast, DataProcessor.get_LR_transform)
+# cross_validate_model(df, get_ridge_forecast, DataProcessor.get_LR_transform)
 # cross_validate_model(df, get_LR_forecast, get_LR_transform)
-# cross_validate_model(data, get_AR_prediction, get_identity_transform)
+cross_validate_model(df, get_AR_forecast, get_identity_X_y_pair)
 # cross_validate_model(data, get_ARIMA_prediction, get_identity_transform)
 # cross_validate_model(data, get_LSTM_prediction, get_LSTM_transform)

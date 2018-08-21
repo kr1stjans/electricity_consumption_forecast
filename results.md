@@ -1,0 +1,9 @@
+best LR
+avg rmse 0.2239884465251788
+avg abs error 0.15047995858012542
+total avg variance -0.05745415079952924
+
+best random forest
+avg rmse 0.22886736989408094
+avg abs error 0.14902601607005275
+total avg variance -1.239399201798837

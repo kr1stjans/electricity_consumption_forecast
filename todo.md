@@ -19,6 +19,9 @@ We started our analysis on previously discovered[refenrence to diploma] best mod
 We used programming language Python 3.7.
 
 
+Previous research came to conclusion that neural networks had too big time complexity to be effective on this size of data set.
+We solved this problem by using external graphical processing units (3x 1080TI).
+
 * data dependency
 
 * feature creation

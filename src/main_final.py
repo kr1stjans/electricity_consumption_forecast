@@ -5,6 +5,7 @@ import os
 # from keras import Sequential
 # from keras.layers import LSTM, Dense
 # from keras.models import model_from_json
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score
 from sklearn.preprocessing import MinMaxScaler
@@ -14,6 +15,10 @@ from statsmodels.tsa.stattools import adfuller
 
 from src.testing_data_preprocessor import Preprocessor
 from src.testing_data_manager import DataProcessor
+
+import seaborn as sns
+
+sns.set()
 
 FORECAST_SIZE = 48
 
@@ -29,7 +34,7 @@ def get_baseline_forecast(x_values, y_values, train_end_index):
     :param x_values_length: 
     :return: 
     """
-    return y_values[train_end_index -FORECAST_SIZE:train_end_index]
+    return y_values[train_end_index - FORECAST_SIZE:train_end_index]
 
 
 def get_AR_forecast(X, y, train_size):
@@ -44,7 +49,19 @@ def get_AR_forecast(X, y, train_size):
     return fitted_model.predict(start=train_size, end=train_size + (FORECAST_SIZE - 1))
 
 
-cached_ARIMA_model = None
+def get_random_forest_forecast(x_values, y_values, train_end_index):
+    """
+    Get Linear Regression model result as prediction.
+    :param x_values:
+    :param y_values:
+    :param train_end_index:
+    :param model:
+    :return:
+    """
+    x_test = x_values[train_end_index:train_end_index + FORECAST_SIZE]
+    model = RandomForestRegressor(n_jobs=-1)
+    model.fit(x_values[:train_end_index], y_values[:train_end_index])
+    return model.predict(X=x_test)
 
 
 def get_LR_forecast(x_values, y_values, train_end_index):
@@ -147,6 +164,10 @@ def cross_validate_model(df, forecast_fn, get_X_y):
     abs_error_sum = 0
     variance_sum = 0
 
+    dates = []
+    yhat_complete = []
+    y_actual_complete = []
+
     cnt = 0
     # start after one year of data (48*365 values) and continue with steps of FORECAST_SIZE
     for train_end_index in range(FORECAST_SIZE * 365, len(df) - FORECAST_SIZE * 2, FORECAST_SIZE):
@@ -156,6 +177,10 @@ def cross_validate_model(df, forecast_fn, get_X_y):
         y_hat = forecast_fn(X, y, train_end_index)
         y_actual = y[train_end_index:train_end_index + FORECAST_SIZE]
 
+        dates.extend(X[train_end_index:train_end_index + FORECAST_SIZE].index)
+        yhat_complete.extend(y_hat)
+        y_actual_complete.extend(y_actual)
+
         rmse_sum += mean_squared_error(y_actual, y_hat) ** 0.5
         abs_error_sum += mean_absolute_error(y_actual, y_hat)
         variance_sum += explained_variance_score(y_actual, y_hat)
@@ -164,6 +189,11 @@ def cross_validate_model(df, forecast_fn, get_X_y):
     print('avg rmse', rmse_sum / cnt)
     print('avg abs error', abs_error_sum / cnt)
     print('total avg variance', variance_sum / cnt)
+
+    plt.figure()
+    plt.plot(dates, yhat_complete, 'r')
+    plt.plot(dates, y_actual_complete, 'b')
+    plt.show()
 
 
 def timeseries_analysis(data):
@@ -203,15 +233,10 @@ def timeseries_analysis(data):
     plt.show()
 
 
-def plot_data(df):
-    plt.figure()
-    plt.plot(df.index, df['value'])
-    plt.show()
-
-
 df = DataProcessor.get_public_data()
 
-cross_validate_model(df.copy(), get_baseline_forecast, get_identity_X_y_pair)
+# cross_validate_model(df.copy(), get_baseline_forecast, get_identity_X_y_pair)
 # cross_validate_model(df.copy(), get_LR_forecast, DataProcessor.get_LR_transform)
+#cross_validate_model(df.copy(), get_random_forest_forecast, DataProcessor.get_LR_transform)
 # cross_validate_model(df.copy(), get_AR_forecast, get_identity_X_y_pair)
 # cross_validate_model(data, get_LSTM_prediction, get_LSTM_transform)

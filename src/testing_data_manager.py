@@ -30,6 +30,7 @@ class DataProcessor:
         # fill missing values
         merged.fillna(method='backfill', inplace=True, axis='index')
 
+        # result must have no nulls or duplicated datetimes
         assert merged.isnull().values.any() == False
         assert merged.index.duplicated().any() == False
 
@@ -62,17 +63,15 @@ class DataProcessor:
 
     @staticmethod
     def get_LR_transform(df):
-        # extract target variable
-        y = df['value']
-
         # create last known value
-        df['last_known_value'] = df['value'].shift(FORECAST_SIZE, axis='index')
-
-        # drop target variable from data set
-        df.drop('value', axis=1, inplace=True)
+        df['last_known_value'] = df['value'].shift(periods=FORECAST_SIZE, freq=pd.offsets.Minute(30), axis=0)
 
         # cut first FORECAST_SIZE values, because they have NaN last_known_value
-        df.drop(df.index[:FORECAST_SIZE], inplace=True)
+        df = df.drop(df.index[:FORECAST_SIZE], axis=0)
+
+        # extract target variable
+        y = df['value']
+        df.drop('value', axis=1, inplace=True)
 
         # create cyclic time features
         hours = list(map(lambda x: x.hour, df.index))
@@ -101,6 +100,8 @@ class DataProcessor:
         df = DataProcessor.normalize_category(df, "summary_Windy and Mostly Cloudy")
         df = DataProcessor.normalize_category(df, "summary_Windy and Overcast")
 
-        # normalize between -1 and 1
-        X = MinMaxScaler(feature_range=(0, 1)).fit_transform(df)
+        # normalize between 0 and 1
+        scaled_df = MinMaxScaler(feature_range=(0, 1)).fit_transform(df)
+        df = pd.DataFrame(scaled_df, df.index, df.columns)
+
         return df, y

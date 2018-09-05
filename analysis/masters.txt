@@ -1,0 +1,50 @@
+STEP BY STEP:
+- Uvod
+- Previous analysis
+	- J. Kraljič
+
+- Sorodna dela
+	- possible improvements
+
+- Our data
+	- generally timeseries
+	- our data definition
+	ali je v podatkih opaˇzen trend, ali je opaˇzena sezonskost, kakˇsna je gostota
+klikov ali gostota spektralne moˇci, avtokorelacija, delna avtokorelacija in
+korelacija med soleˇznimi ˇcasovnimi vrstami.
+
+Ali ˇcasovna vrsta vsebuje trend, se najbolj pogosto izraˇcuna s prirejenim
+Dickey–Fuller testom (ang. Augmented Dickey–Fuller test, ADF). ADF test
+je statistiˇcni test, ki doloˇca, kako moˇcno je doloˇcen trend na ˇcasovni vrsti.
+
+avtocorreliation & partial autocorrelation
+
+count, mean, std, min, 25%, 50%, 75%, max
+describe od pandas
+correlation intensity heatmap
+
+
+- preprocessing
+
+- feature engineering
+
+- neural networks
+	- general
+
+	- recurrent neural networks
+
+	- convolutional neural network
+
+	- lstm
+
+	- ufcnn
+
+	- ensambles
+
+- workflow
+	- training
+
+- results
+	- testing
+
+- zaključek

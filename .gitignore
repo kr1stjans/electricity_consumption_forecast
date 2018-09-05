@@ -4,3 +4,10 @@ include
 lib
 .DS_Store
 __pycache__
+data
+pyvenv.cfg
+pip-selfcheck.json
+.pdf
+.h5
+.file
+.pdf

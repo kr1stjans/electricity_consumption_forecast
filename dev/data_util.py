@@ -1,31 +1,15 @@
 import os
 
-import numpy
+import numpy as np
 
 import pandas as pd
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 class DataProcessor:
-    @staticmethod
-    def load_single_df():
-        df = pd.read_csv(filepath_or_buffer='../data/data_purest.csv', sep=',', header=None,
-                         usecols=['id', 'dt', 'value', 'subgroup', 'group'],
-                         names=['id', 'dt', 'value', 'subgroup', 'group'], index_col='dt',
-                         parse_dates=True,
-                         infer_datetime_format=True, dtype={'value': numpy.float64}, memory_map=True)
-
-        # remove duplicated rows
-
-        statistics = []
-
-        for c in set(df['id']):
-            consumer_df = df.loc[df['id'] == c]
-            df = df[~df.index.duplicated(keep='first')]
-            consumer_df = consumer_df.asfreq(pd.offsets.Minute(30))
-            statistics.append({'missing_dates': 1})
 
     @staticmethod
-    def load_data_as_separate_dataframes():
+    def load_data_as_separate_dataframes(size=None):
         result = []
 
         weather = pd.read_csv('../data/weather.csv', sep=",", index_col='time', parse_dates=True,
@@ -33,30 +17,38 @@ class DataProcessor:
                               usecols=['visibility', 'windBearing', 'temperature', 'dewPoint', 'pressure', 'time',
                                        'apparentTemperature', 'windSpeed', 'precipType', 'humidity', 'summary'])
 
-        for file in os.listdir('../data/initial_consumers'):
+        idx = 0
+        for file in os.listdir('../data/consumers'):
+            idx += 1
+            if size is not None and idx > size:
+                break
+
             if 'MAC00' not in file:
                 continue
 
-            consumer_df = pd.read_csv('../data/initial_consumers/' + file, sep=',', header=None,
-                                      usecols=['dt', 'value'],
-                                      names=['id', 'type', 'dt', 'value', 'subgroup', 'group'], index_col='dt',
-                                      parse_dates=True,
-                                      infer_datetime_format=True, dtype={'value': numpy.float64})
-            df = pd.merge(weather.copy(), consumer_df, how='inner', left_index=True, right_index=True)
+            df = pd.read_csv('../data/consumers/' + file, sep=',', header=0,
+                             usecols=['dt', 'value'],
+                             names=['dt', 'value'], index_col='dt',
+                             parse_dates=True, memory_map=True,
+                             infer_datetime_format=True, dtype={'value': np.float64})
+            # df = pd.merge(weather.copy(), consumer_df, how='inner', left_index=True, right_index=True)
 
             # remove duplicated rows
             df = df[~df.index.duplicated(keep='first')]
 
             # fill missing indexes
-            df = df.asfreq(pd.offsets.Minute(30))
+            df = df.asfreq(pd.offsets.Minute(30), method='ffill')
 
             # fill missing values
-            df.fillna(method='ffill', inplace=True, axis='index')
+            df = df.fillna(method='ffill', axis='index')
 
             # result must have no nulls or duplicated datetimes
             assert df.isnull().values.any() == False
             assert df.index.duplicated().any() == False
 
+            # scale data
+            scaler = MinMaxScaler()
+            df = pd.DataFrame(scaler.fit_transform(df))
             result.append(df)
 
         return result

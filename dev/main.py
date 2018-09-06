@@ -1,9 +1,11 @@
 import datetime
 import os
 
-import numpy
+import numpy as np
 
 import pandas as pd
+import sklearn
+from sklearn.cluster import KMeans
 
 from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.stattools import acf, pacf
@@ -27,7 +29,7 @@ def total_rmse():
                               header=1,
                               names=['dt', 'id', 'value'], index_col='id',
                               parse_dates=['dt'],
-                              infer_datetime_format=True, dtype={'value': numpy.float64}, memory_map=True)
+                              infer_datetime_format=True, dtype={'value': np.float64}, memory_map=True)
 
     print("dataframes len", len(consumers))
     print(consumers[0].head(100))
@@ -65,7 +67,7 @@ def get_rmse_for_model(df, forecast_fn, get_X_y):
 
     X, y = get_X_y(df)
     cnt = 0
-    # start after one year of data (FORECAST_SIZE * 365 values) and continue with steps of FORECAST_SIZE
+    # start after one year of data (FORECAST_SIZE * 365 values) a   nd continue with steps of FORECAST_SIZE
     for train_end_index in range(FORECAST_SIZE * 365, len(df) - FORECAST_SIZE * 2, FORECAST_SIZE):
         y_hat = forecast_fn(X, y, train_end_index)
         y_actual = y[train_end_index:train_end_index + FORECAST_SIZE]
@@ -89,39 +91,50 @@ def plot_summed_values(df):
     plt.show()
 
 
-def acf_custom(series):
-    n = len(series)
-    data = numpy.asarray(series)
-    mean = numpy.mean(data)
-    c0 = numpy.sum((data - mean) ** 2) / float(n)
-
-    def r(h):
-        acf_lag = ((data[:n - h] - mean) * (data[h:] - mean)).sum() / float(n) / c0
-        return round(acf_lag, 3)
-
-    x = numpy.arange(n)  # Avoiding lag 0 calculation
-    acf_coeffs = map(r, x)
-    return list(acf_coeffs)
-
-
 def plot_autocorrelations():
     data = DataProcessor.load_data_as_separate_dataframes()
 
+    print('data loaded')
+    avg_df = pd.concat(data, axis=1).mean(axis=1)
+    avg_df.to_csv('total_average.csv')
+    print('data merged')
+    acf_values = acf(avg_df['value'].values[:3000], nlags=3000)
+    print('values calculated')
+    # acf_values = acf(d['value'].values[:350])[1:]
+    plt.plot(range(len(acf_values)), acf_values)
+    '''
     plt.figure(1)
     for d in data:
-        acf_values = pacf(d['value'].values[:336], nlags=336)
-        # pacf()
+        acf_values = acf(d['value'].values[:192], nlags=192)
         # acf_values = acf(d['value'].values[:350])[1:]
         plt.plot(range(len(acf_values)), acf_values)
+    '''
+    plt.show()
+
+
+def load_initial_consumers():
+    original_data = DataProcessor.load_data_as_separate_dataframes()
+    data = pd.concat(original_data, axis=1)
+    data = data.fillna(method='ffill', axis='index').fillna(0).values.transpose()
+
+    cluster_size = 25
+    kmeans = KMeans(n_clusters=cluster_size).fit(data)
+    plt.figure(1)
+    for i in range(cluster_size):
+        plt.subplot(cluster_size / 5, cluster_size / (cluster_size / 5), i + 1)
+        for idx, d in enumerate(original_data):
+            if kmeans.labels_[idx] == i:
+                plt.plot(range(len(d)), d)
     plt.show()
 
 
 if __name__ == "__main__":
-    plot_autocorrelations()
-    # total_rmse()
-    # complete_df = pd.read_csv(filepath_or_buffer='../data/new.csv', sep=',',
-    #                          header=1,
-    #                          names=['dt', 'id', 'value'], index_col='dt',
-    #                          parse_dates=True,
-    #                          infer_datetime_format=True, dtype={'value': numpy.float64}, memory_map=True)
-    # plot_nr_of_measurements_per_dt(complete_df)
+    load_initial_consumers()
+# plot_autocorrelations()
+# total_rmse()
+# complete_df = pd.read_csv(filepath_or_buffer='../data/new.csv', sep=',',
+#                          header=1,“
+#                          names=['dt', 'id', 'value'], index_col='dt',
+#                          parse_dates=True,
+#                          infer_datetime_format=True, dtype={'value': numpy.float64}, memory_map=True)
+# plot_nr_of_measurements_per_dt(complete_df)

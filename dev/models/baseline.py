@@ -4,10 +4,11 @@ from dev.settings import FORECAST_SIZE
 
 class BaselineModel(AbstractModel):
 
-    @staticmethod
-    def get_prediction(x_values, y_values, train_end_index):
+    def get_prediction(self, x_values, y_values, train_end_index, consumer_index):
         return y_values[train_end_index - FORECAST_SIZE:train_end_index]
 
-    @staticmethod
-    def transform_data(df):
+    def transform_data(self, df):
         return df['value'], df['value']
+
+    def get_name(self):
+        return "baseline"

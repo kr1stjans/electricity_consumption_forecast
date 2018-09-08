@@ -13,7 +13,7 @@ from dev.data_util import DataProcessor
 class RandomForestModel(AbstractModel):
 
     @staticmethod
-    def get_prediction(x_values, y_values, train_end_index):
+    def get_prediction(x_values, y_values, train_end_index, consumer_index):
         x_test = x_values[train_end_index:train_end_index + FORECAST_SIZE]
         model = RandomForestRegressor(n_jobs=-1)
         model.fit(x_values[:train_end_index], y_values[:train_end_index])
@@ -63,3 +63,7 @@ class RandomForestModel(AbstractModel):
         df = pd.DataFrame(scaled_df, df.index, df.columns)
 
         return df, y
+
+
+    def get_name(self):
+        return "random_forest"

@@ -13,15 +13,18 @@ from dev.data_util import DataProcessor
 class RidgeRegressionModel(AbstractModel):
 
     def __init__(self, normalize_minus_one_to_one=False) -> None:
+        super().__init__()
         self.normalize_minus_one_to_one = normalize_minus_one_to_one
 
-    def get_prediction(self, x_values, y_values, train_end_index):
+    def get_prediction(self, x_values, y_values, train_end_index, consumer_index):
         x_test = x_values[train_end_index:train_end_index + FORECAST_SIZE]
         model = Ridge(alpha=0.05)
         model.fit(x_values[:train_end_index], y_values[:train_end_index])
         return model.predict(X=x_test)
 
     def transform_data(self, df):
+        df = df.copy()
+
         # create last known value
         df['last_known_value'] = df['value'].shift(periods=FORECAST_SIZE, freq=pd.offsets.Minute(30), axis=0)
 
@@ -65,3 +68,7 @@ class RidgeRegressionModel(AbstractModel):
         df = pd.DataFrame(scaled_df, df.index, df.columns)
 
         return df, y
+
+
+    def get_name(self):
+        return "ridge_regression"

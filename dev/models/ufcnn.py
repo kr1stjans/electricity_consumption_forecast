@@ -2,15 +2,16 @@ from dev.models.abstract_model import AbstractModel
 from dev.settings import FORECAST_SIZE
 
 
-class CNNModel(AbstractModel):
+class UFCNNModel(AbstractModel):
 
-    @staticmethod
-    def get_prediction(x_values, y_values, train_end_index):
+    def get_prediction(self, x_values, y_values, train_end_index, consumer_index):
         # TODO: implement UFCNN (reference: https://github.com/nmayorov/ufcnn)
         return y_values[train_end_index - FORECAST_SIZE:train_end_index]
 
-    @staticmethod
-    def transform_data(df):
+    def transform_data(self, df):
         # TODO: transform data accordingly
 
         return df['value'], df['value']
+
+    def get_name(self):
+        return "ufcnn"

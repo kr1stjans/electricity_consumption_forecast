@@ -11,3 +11,5 @@ pip-selfcheck.json
 .h5
 .file
 .pdf
+ALL.csv
+dev/trained_models

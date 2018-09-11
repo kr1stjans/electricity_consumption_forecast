@@ -5,7 +5,7 @@ from dev.models.neural_network_model import NeuralNetworkModel
 from dev.settings import FORECAST_SIZE
 
 
-class LSTMModel(NeuralNetworkModel):
+class StackedLSTMModel(NeuralNetworkModel):
 
     def get_model(self, num_hidden, feat_length, num_days):
         """
@@ -14,9 +14,12 @@ class LSTMModel(NeuralNetworkModel):
         """
         model = Sequential()
         model.add(
-            LSTM(units=num_hidden, input_shape=(num_days * FORECAST_SIZE, feat_length),
-                 return_sequences=False))
-        model.add(Dense(48, activation='relu'))
+            LSTM(units=num_hidden,
+                 input_shape=(num_days * FORECAST_SIZE, feat_length),
+                 return_sequences=True))
+        model.add(LSTM(units=num_hidden,
+                       return_sequences=False))
+        model.add(Dense(48, activation='selu'))
         model.compile(loss='mean_squared_error', optimizer='rmsprop')
         return model
 

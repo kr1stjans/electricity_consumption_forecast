@@ -6,8 +6,11 @@ from sklearn.metrics import mean_squared_error
 
 from dev.data_util import DataProcessor
 from dev.models.baseline import BaselineModel
+from dev.models.conv1d import Conv1DModel
+from dev.models.conv2d import Conv2DModel
 from dev.models.lstm import LSTMModel
 from dev.models.ridge_regression import RidgeRegressionModel
+from dev.models.stacked_lstm import StackedLSTMModel
 from dev.settings import FORECAST_SIZE
 
 from dev.statistics import Statistics
@@ -24,7 +27,10 @@ def total_rmse():
 
     models = [BaselineModel(),
               RidgeRegressionModel(True),
-              LSTMModel()
+              #StackedLSTMModel(),
+              #LSTMModel(),
+              #Conv2DModel(),
+              Conv1DModel()
               # AutoregressiveModel(),
               # RandomForestModel()
               ]

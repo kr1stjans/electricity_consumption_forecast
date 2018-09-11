@@ -1,5 +1,6 @@
 import pandas as pd
 from statsmodels.tsa.ar_model import AR
+from statsmodels.tsa.arima_model import ARIMA
 
 from dev.settings import FORECAST_SIZE
 

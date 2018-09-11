@@ -43,8 +43,9 @@ class DataProcessor:
             df = df.fillna(method='ffill', axis='index')
 
             # result must have no nulls or duplicated datetimes
-            assert df.isnull().values.any() == False
-            assert df.index.duplicated().any() == False
+            if df.isnull().values.any() == True or df.index.duplicated().any() == True:
+                print('skipping')
+                continue
 
             # scale data
             result[file] = df

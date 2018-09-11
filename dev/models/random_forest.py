@@ -12,15 +12,13 @@ from dev.data_util import DataProcessor
 
 class RandomForestModel(AbstractModel):
 
-    @staticmethod
-    def get_prediction(x_values, y_values, train_end_index, consumer_index):
+    def get_prediction(self, x_values, y_values, train_end_index, consumer_index):
         x_test = x_values[train_end_index:train_end_index + FORECAST_SIZE]
         model = RandomForestRegressor(n_jobs=-1)
         model.fit(x_values[:train_end_index], y_values[:train_end_index])
         return model.predict(X=x_test)
 
-    @staticmethod
-    def transform_data(df):
+    def transform_data(self, df):
         # create last known value
         df['last_known_value'] = df['value'].shift(periods=FORECAST_SIZE, freq=pd.offsets.Minute(30), axis=0)
 
@@ -63,7 +61,6 @@ class RandomForestModel(AbstractModel):
         df = pd.DataFrame(scaled_df, df.index, df.columns)
 
         return df, y
-
 
     def get_name(self):
         return "random_forest"

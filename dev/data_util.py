@@ -7,7 +7,6 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 class DataProcessor:
-
     @staticmethod
     def load_data_as_separate_dataframes(size=None):
         result = []
@@ -48,7 +47,7 @@ class DataProcessor:
 
             # scale data
             scaler = MinMaxScaler()
-            df = pd.DataFrame(scaler.fit_transform(df))
+            df['value'] = scaler.fit_transform(df['value'].values.reshape(-1, 1))
             result.append(df)
 
         return result

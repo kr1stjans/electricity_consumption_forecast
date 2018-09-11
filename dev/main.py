@@ -117,9 +117,29 @@ def load_initial_consumers():
     data = pd.concat(original_data, axis=1)
     data = data.fillna(method='ffill', axis='index').fillna(0).values.transpose()
 
+    clusters = [[664722.6098773873, 639748.0777654473, 630854.7795726027, 626444.6719076467, 618110.443418544,
+                 616578.6866641308, 612753.1607919122, 609630.8295018858, 605946.7952054872, 605662.9731812247,
+                 599176.8038367201, 596376.1178825608, 593176.6868208277, 592780.2515878733, 591349.6256350856,
+                 586922.5082948159, 585265.3377661232, 582881.8311003151, 581049.8068028545, 579026.451466421,
+                 576382.3357024424, 574056.5614726953, 573409.7720791526, 570961.5226713157, 567218.3231113362,
+                 564947.3855997741, 563831.9900033098, 560561.940054088, 558314.3214983398, 555226.5072961054,
+                 555095.2757642752, 553191.7733401267, 550949.7789032019, 547721.3887849059, 546614.6202111957,
+                 546185.5629633496, 543651.8154553492, 539997.8885186019, 540183.2744133768]]
+    for k in range(200, 500, 5):
+        print('calculating cluster', k)
+        clusters.append(KMeans(n_clusters=k).fit(data).inertia_)
+
+    print(clusters)
+    plt.figure(1)
+    plt.plot(range(len(clusters)), clusters, 'bx-')
+    plt.xlabel('k')
+    plt.ylabel('Sum_of_squared_distances')
+    plt.title('Elbow Method For Optimal k')
+    plt.show()
+
+    exit(1)
     cluster_size = 25
     kmeans = KMeans(n_clusters=cluster_size).fit(data)
-    plt.figure(1)
     for i in range(cluster_size):
         plt.subplot(cluster_size / 5, cluster_size / (cluster_size / 5), i + 1)
         for idx, d in enumerate(original_data):
@@ -128,8 +148,54 @@ def load_initial_consumers():
     plt.show()
 
 
+def datetime64_to_time_of_day(datetime64_array):
+    day = datetime64_array.astype('datetime64[D]').astype(datetime64_array.dtype)
+    time_of_day = datetime64_array - day
+    return time_of_day
+
+
+def avg_day_clusters():
+    original_data = DataProcessor.load_data_as_separate_dataframes()
+
+    daily_profile = []
+
+    for d in original_data.copy():
+        d['time'] = list(datetime64_to_time_of_day(d.index.values))
+        d = d.set_index(keys='time', drop=True).groupby(level=0).mean()
+        daily_profile.append(d)
+
+    data = pd.concat(daily_profile, axis=1)
+    data = data.fillna(method='ffill', axis='index').fillna(0).values.transpose()
+
+    # clusters = []
+    # for k in range(5, 500, 5):
+    #     print('calculating cluster', k)
+    #     clusters.append(KMeans(n_clusters=k).fit(data).inertia_)
+    #
+    # print(clusters)
+    # plt.figure(1)
+    # plt.plot(range(len(clusters)), clusters, 'bx-')
+    # plt.xlabel('k')
+    # plt.ylabel('Sum_of_squared_distances')
+    # plt.title('Elbow Method For Optimal k')
+    # plt.show()
+    #
+    # exit(1)cd
+
+    cluster_size = 300
+    kmeans = KMeans(n_clusters=cluster_size).fit(data)
+    for i in range(cluster_size):
+        plt.subplot(50, 60, i + 1)
+        for idx, d in enumerate(data):
+            if kmeans.labels_[idx] == i:
+                #values = d['value'].valuespip i
+                plt.plot(range(len(d)), d)
+    plt.show()
+
+
 if __name__ == "__main__":
-    load_initial_consumers()
+    avg_day_clusters()
+    # load_initial_consumers()
 # plot_autocorrelations()
 # total_rmse()
 # complete_df = pd.read_csv(filepath_or_buffer='../data/new.csv', sep=',',

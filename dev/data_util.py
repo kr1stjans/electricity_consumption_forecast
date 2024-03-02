@@ -42,6 +42,9 @@ class DataProcessor:
             # fill missing values
             df = df.fillna(method='ffill', axis='index')
 
+            # remove negative numbers
+            df['value'].clip(lower=0, inplace=True)
+
             # result must have no nulls or duplicated datetimes
             if df.isnull().values.any() == True or df.index.duplicated().any() == True:
                 print('skipping')

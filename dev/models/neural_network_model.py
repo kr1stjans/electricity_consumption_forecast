@@ -1,7 +1,10 @@
+import hashlib
 import os
 
 import pandas as pd
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from keras.engine.saving import load_model
+from keras.utils import multi_gpu_model
 from sklearn.preprocessing import MinMaxScaler
 
 from dev.data_util import DataProcessor
@@ -11,25 +14,38 @@ import numpy as np
 
 
 class NeuralNetworkModel(AbstractModel):
-    def __init__(self, num_hidden=128, num_days2_see=30, epoch=200, batch_size=365) -> None:
+    def __init__(self, num_hidden=32, num_days2_see=1, epoch=512, batch_size=32, use_gpu=True,
+                 loss='mean_squared_error', optimizer='rmsprop') -> None:
         super().__init__()
         self.num_days2see = num_days2_see
-        self.scaler = None
+        self.x_scaler = None
         self.model = None
+        self.gpu_model = None
+        self.use_gpu = use_gpu
         self.num_hidden = num_hidden
         self.epoch = epoch
         self.batch_size = batch_size
+        self.loss = loss
+        self.optimizer = optimizer
+        # self.callback_early_stopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
+        # self.callback_reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, min_lr=1e-4, patience=0, verbose=1)
 
-    def get_name(self):
-        return "neuralnetwork"
+    def hash_parameters(self):
+        params = (str(self.get_name()) + str(self.num_days2see) + str(self.epoch) + str(self.batch_size) + str(
+            self.num_hidden)).encode("utf-8")
+        return hashlib.md5(params).hexdigest()
 
-    def get_model(self, num_hidden, feat_length, num_days):
-        pass
+    def build_model(self, num_hidden, feat_length, num_days):
+        if self.use_gpu:
+            self.gpu_model = multi_gpu_model(self.model, gpus=3)
+            self.gpu_model.compile(loss=self.loss, optimizer=self.optimizer)
+        else:
+            self.model.compile(loss=self.loss, optimizer=self.optimizer)
 
     def get_prediction(self, x_values, y_values, train_end_index, consumer_name):
         train_end_index_day = int(train_end_index / FORECAST_SIZE)
 
-        file_name = 'dev/trained_models/model_{}_series_{}.h5'.format(self.get_name(), consumer_name)
+        file_name = 'dev/trained_models/model_{}_consumer_{}.h5'.format(self.hash_parameters(), consumer_name)
 
         if os.path.isfile(file_name):
             if self.model is None:
@@ -40,31 +56,46 @@ class NeuralNetworkModel(AbstractModel):
             train_features = x_values[:train_end_index_day]
             train_labels = y_values[:train_end_index_day]
 
-            self.model = self.get_model(num_hidden=self.num_hidden,
-                                        num_days=self.num_days2see,
-                                        feat_length=x_values.shape[2])
-            self.model.fit(x=train_features,
-                           y=train_labels,
-                           validation_split=0.15,
-                           epochs=self.epoch,
-                           batch_size=self.batch_size,
-                           verbose=2)
+            self.build_model(num_hidden=self.num_hidden,
+                             num_days=self.num_days2see,
+                             feat_length=x_values.shape[2])
+
+            model_to_use = self.gpu_model if self.use_gpu else self.model
+
+            model_to_use.fit(x=train_features,
+                             y=train_labels,
+                             validation_split=0.15,
+                             epochs=self.epoch,
+                             batch_size=self.batch_size,
+                             verbose=2)
+
+            # always save initial model without GPU
             self.model.save(file_name)
 
+        # make prediction with initial model without GPU
         prediction = self.model.predict(x_values[train_end_index_day:train_end_index_day + 1],
                                         batch_size=self.batch_size)
         return prediction[0] if len(prediction) > 0 else None
 
+    def batch_generator(self, batch_size, sequence_length, x_train, y_train):
+
+        while True:
+            x_shape = (batch_size, sequence_length, x_train.shape[1])
+            x_batch = np.zeros(shape=x_shape, dtype=np.float16)
+
+            y_shape = (batch_size, sequence_length, y_train.shape[1])
+            y_batch = np.zeros(shape=y_shape, dtype=np.float16)
+
+            for i in range(batch_size):
+                idx = np.random.randint(x_train.shape[0] - sequence_length)
+
+                x_batch[i] = x_train[idx:idx + sequence_length]
+                y_batch[i] = y_train[idx:idx + sequence_length]
+
+            yield (x_batch, y_batch)
+
     def transform_data(self, df):
         df = df.copy()
-
-        # create last known value
-        df['last_known_value'] = df['value'].shift(periods=FORECAST_SIZE,
-                                                   freq=pd.offsets.Minute(30),
-                                                   axis=0)
-
-        # cut first FORECAST_SIZE values, because they have NaN last_known_value
-        df = df.drop(df.index[:FORECAST_SIZE], axis=0)
 
         hours = list(map(lambda x: x.hour, df.index))
         df['hour_sin'] = DataProcessor.map_datetime_to_circular(hours, np.sin)
@@ -101,17 +132,24 @@ class NeuralNetworkModel(AbstractModel):
         df = DataProcessor.normalize_weather_category(df,
                                                       "summary_Windy and Overcast")
 
-        values = df['value']
-        combined = df.loc[:, df.columns != 'value']
+        # create last known value
+        df['target_value'] = df['value'].shift(periods=-FORECAST_SIZE,
+                                               freq=pd.offsets.Minute(30),
+                                               axis=0)
 
-        # The following lines scale the data except the value column.
-        self.scaler = MinMaxScaler()
-        columns = combined.columns.tolist()
-        combined[columns] = self.scaler.fit_transform(
-            combined.loc[:, combined.columns])
-        combined = pd.concat([combined, values], axis=1)
-        combined.dropna(axis=0, inplace=True)
-        unique_dates = np.unique(combined.index.date[:-self.num_days2see])
+        # cut last FORECAST_SIZE values, because they have NaN last_known_value
+        df = df.drop(df.index[-FORECAST_SIZE:], axis=0)
+
+        target_vector = df['target_value']
+        df = df.drop('target_value', axis=1)
+
+        self.x_scaler = MinMaxScaler(feature_range=(-1, 1))
+        self.y_scaler = MinMaxScaler(feature_range=(-1, 1))
+
+        df = self.x_scaler.fit_transform(df)
+        target_vector = self.y_scaler.fit_transform(target_vector.reshape(-1, 1))
+
+        unique_dates = np.unique(df.index.date[:-self.num_days2see])
         unique_dates = np.sort(unique_dates, axis=0).tolist()
 
         features = []
@@ -122,14 +160,14 @@ class NeuralNetworkModel(AbstractModel):
 
             combined_data = []
             for i in range(ind, ind + self.num_days2see):
-                combined_data.append(combined.loc[str(unique_dates[i])])
+                combined_data.append(df.loc[str(unique_dates[i])])
 
             query_feat = pd.concat(combined_data, axis=0)
 
             if is_end:
                 break
 
-            query_target = combined.loc[
+            query_target = df.loc[
                 str(unique_dates[ind + self.num_days2see])]
 
             enough = query_feat.shape[

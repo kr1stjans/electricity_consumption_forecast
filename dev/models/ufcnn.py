@@ -1,17 +1,28 @@
-from dev.models.abstract_model import AbstractModel
-from dev.settings import FORECAST_SIZE
+from keras import Sequential
+from keras.layers import Dense, Activation, Flatten, Conv1D
+from keras.utils import multi_gpu_model
+
+from dev.models.neural_network_model import NeuralNetworkModel
 
 
-class UFCNNModel(AbstractModel):
+class UFCNNModel(NeuralNetworkModel):
 
-    def get_prediction(self, x_values, y_values, train_end_index, consumer_index):
-        # TODO: implement UFCNN (reference: https://github.com/nmayorov/ufcnn)
-        return y_values[train_end_index - FORECAST_SIZE:train_end_index]
+    def build_model(self, num_hidden, feat_length, num_days):
+        model = Sequential()
+        model.add(Conv1D(nb_filter=36, input_shape=(48 * num_days, feat_length), filter_length=5,
+                         border_mode='valid', init="lecun_uniform"))
+        model.add(Activation('relu'))
+        model.add(Conv1D(nb_filter=48, filter_length=5, border_mode='same', init="lecun_uniform"))
+        model.add(Activation('sigmoid'))
+        model.add(Flatten())
+        model.add(Dense(128, activation='selu'))
+        model.add(Dense(48, activation='selu'))
 
-    def transform_data(self, df):
-        # TODO: transform data accordingly
-
-        return df['value'], df['value']
+        if self.use_gpu:
+            self.gpu_model = multi_gpu_model(self.model, gpus=3)
+            self.gpu_model.compile(loss='mean_squared_error', optimizer='adam')
+        else:
+            self.model.compile(loss='mean_squared_error', optimizer='adam')
 
     def get_name(self):
         return "ufcnn"

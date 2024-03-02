@@ -1,0 +1,22 @@
+- time series differencing is a must for neural networks to eliminate trend
+
+Klasiˇcni modeli ne znajo izrabiti raznovrstnih medsebojnih odvisnosti in informacij, ki jih ponujajo podobne ˇcasovne vrste.
+
+Zato puˇsˇcajo visok potencial natanˇcnih napovedi neizkoriˇsˇcen, saj ne morejo ujeti odvisnosti vsebinskih informacij, ki jih nosijo podobne ˇcasovne vrste.
+
+Na voljo je veˇcje ˇstevilo sorodnih oziroma soleˇznih ˇcasovnih vrst, kot so ˇstevilo prikazov oglasov, klikov na oglase, vˇseˇckanje oglasov, deljenje oglasov in podobno.
+
+Pri analizi ˇcasovnih vrst je dobro najprej odkrivati naslednjih lastnosti: ali je v podatkih opaˇzen trend, ali je opaˇzena sezonskost, kakˇsna je gostota klikov ali gostota spektralne moˇci, avtokorelacija, delna avtokorelacija in korelacija med soleˇznimi ˇcasovnimi vrstami.
+- Dickey–Fuller testom (ang. Augmented Dickey–Fuller test, ADF)
+
+
+Napovedovanje ˇcasovnih vrst (ang. time series forecasting) lahko delimo na dve kategoriji; na parametriˇcno in neparametriˇcno [11]. Med parametriˇcne metode spada ARIMA, ki je visoko priznana metoda za gradnjo napovednih modelov. ARIMA se je izkazala za najbolj uspeˇsno pri veliko razliˇcnih pa- nogah druˇzbe, kot so finance, okolje, promet ali energija, na primer uporaba ARIME za napovedovanje porabe energije na Kitajskem [12].
+Med neparametriˇcne metode spadajo umetne nevronske mreˇze. Predsta- vljajo skupino raznolikih, po navadi nelinearnih in kompleksnih modelov, ki so bili uspeˇsno implementirani na mnogih podroˇcjih, kot so detekcija vida, obdelava naravnega jezika in prepoznava govora [13]. Medtem se nevronske mreˇze niso obnesle pri napovedovanju ˇcasovnih vrst. Glavni problem lahko vidimo v kompleksnosti nevronskih mreˇz, katere zahtevajo dolgo zgodovino ˇcasovnih vrst oziroma dovolj uˇcnih primerov, da se lahko nevronske mreˇze nauˇcijo natanˇcno napovedovati naslednje vrednosti ˇcasovnih vrst [13]. Zbi- ranje masovnih podatkov jim je dalo novo priloˇznost.
+
+
+Liu in sodelavci [20] so prav tako napovedovali kratkotrajne napovedi, in sicer, koliko energije je potrebne, da se vzpostavi ravnovesje med potrebo in ponudbo (ang. load forecasting). Iz njihovih podatkov so odkrili, da imajo ˇcasovne vrste zelo dolge periode. Uporabili so LSTM, ker znajo najbolje delati z dolgimi ˇcasovnimi odvisnostmi, kar se je pokazalo tudi na natanˇcnosti napovedi. Pravijo, da LSTM posebno dobro delajo predvsem na podatkih z veliko razliˇcnimi periodami.
+
+Potencial napovedovanja ˇcasovnih vrst je tako s klasiˇcnimi univaria- tnimi napovednimi modeli neizkoriˇsˇcen. Univariatni modeli so tisti modeli, ki za napovedovaje uporabljajo le eno ˇcasovno vrsto. Najbolj priljubljen med njimi je ARIMA. Cˇe pa je mnoˇzica ˇcasovnih vrst preveˇc raznolika, se lahko napovedi tudi poslabˇsajo.
+
+
+Za najpomembnejˇsi klasiˇcni model za napovedovanje ˇcasovnih vrst velja inte- grirani avtoregresijski model s premikajoˇcimi sredinami (ARIMA), medtem ko vektorska avtoregresija (ang. vector autoregression, VAR) zaradi svoje preprostosti predstavlja enega najbolj razˇsirjenih klasiˇcnih modelov za na- povedovanje multivariatnih ˇcasovnih vrst [27]. Multivariatni modeli lahko za uˇcenje uporabijo eno ali veˇc ˇcasovnih vrst in napovedujejo eno ali veˇc ˇcasovnih vrst.

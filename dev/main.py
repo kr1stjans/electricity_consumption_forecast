@@ -9,16 +9,17 @@ from dev.models.baseline import BaselineModel
 from dev.models.conv1d import Conv1DModel
 from dev.models.conv2d import Conv2DModel
 from dev.models.lstm import LSTMModel
+from dev.models.prophet import ProphetModel
 from dev.models.ridge_regression import RidgeRegressionModel
 from dev.models.stacked_lstm import StackedLSTMModel
 from dev.settings import FORECAST_SIZE
 
 from dev.statistics import Statistics
 
-TRAINING_START = '2013-09-01'
+TRAINING_START = '2013-11-01'
 TESTING_INDEX_END = '2014-02-20'
 
-CONSUMERS_TO_TEST = 10
+CONSUMERS_TO_TEST = 1
 
 
 def total_rmse():
@@ -26,11 +27,12 @@ def total_rmse():
     print("Loaded %s consumers" % len(consumers))
 
     models = [BaselineModel(),
-              RidgeRegressionModel(True),
-              #StackedLSTMModel(),
-              #LSTMModel(),
-              #Conv2DModel(),
-              Conv1DModel()
+              # ProphetModel()
+              # RidgeRegressionModel(True),
+              # StackedLSTMModel(),
+              # LSTMModel(use_gpu=False),
+              # Conv2DModel(),
+              Conv1DModel(use_gpu=False)
               # AutoregressiveModel(),
               # RandomForestModel()
               ]

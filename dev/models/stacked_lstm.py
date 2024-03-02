@@ -7,7 +7,7 @@ from dev.settings import FORECAST_SIZE
 
 class StackedLSTMModel(NeuralNetworkModel):
 
-    def get_model(self, num_hidden, feat_length, num_days):
+    def build_model(self, num_hidden, feat_length, num_days):
         """
         Defines the LSTM Model for regression. The objective is to minimize MSE which is the same as minimizing RMSE.
         The optimizer used is RMSProp. Please do not change this optimizer.

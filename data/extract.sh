@@ -1,1 +1,0 @@
-cat data.csv | grep Std > data_standard.csv

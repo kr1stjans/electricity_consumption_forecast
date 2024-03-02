@@ -1,0 +1,74 @@
+
+
+'''
+def get_LSTM_prediction(x_values, y_values, train_size):
+    # extract train data as in real world scenario - we don't know anything else
+    x_train = x_values[:train_size]
+    y_train = y_values[:train_size]
+    x_test = x_values[train_size:train_size + FORECAST_SIZE]
+
+    # rescale the train data
+    scaler = MinMaxScaler(feature_range=(-1, 1))
+    x_train = scaler.fit_transform(x_train)
+    y_train = scaler.transform(y_train)
+
+    # convert from 2d (samples, features) to 3d (samples, timesteps=1, features)
+    x_train = x_train.reshape(x_train.shape[0], 1, x_train.shape[1])
+
+    n_batch = 1
+    nb_epoch = 150
+    n_neurons = 1
+
+    if os.path.exists('cached_models/model.json'):
+        json_model_file = open('cached_models/model.json', 'r')
+        loaded_model_json = json_model_file.read()
+        json_model_file.close()
+        model = model_from_json(loaded_model_json)
+        # load weights into new model
+        model.load_weights("cached_models/model.h5")
+        print("Loaded model from disk")
+    else:
+        model = Sequential()
+        model.add(LSTM(n_neurons, batch_input_shape=(n_batch, x_train.shape[1], x_train.shape[2]), stateful=True))
+        model.add(Dense(y_train.shape[1]))
+        model.compile(loss='mean_squared_error', optimizer='adam')
+
+        for i in range(nb_epoch):
+            model.fit(x_train, y_train, epochs=1, batch_size=n_batch, verbose=0, shuffle=False)
+            print("fit epochs", i)
+            model.reset_states()
+
+        model_json = model.to_json()
+        with open("cached_models/model.json", "w") as json_model_file:
+            json_model_file.write(model_json)
+        # serialize weights to HDF5
+        model.save_weights("cached_models/model.h5")
+        print("Saved Keras model to disk")
+
+    forecasts = []
+    for i in range(len(x_test)):
+        x_test = x_test.reshape(1, 1, len(x_test))
+        forecast = model.predict(x_test, batch_size=n_batch)
+        forecasts.append(forecast)
+
+    print("forecasts", forecasts)
+
+    # transform back and return
+    return scaler.transform(forecasts)
+
+
+def get_LSTM_transform(data):
+    n = len(data)
+
+    y_values = []
+
+    empty_extension = [0] * FORECAST_SIZE
+    x_values_extended = np.append(data[:, 0], empty_extension)
+    for i in range(FORECAST_SIZE):
+        y_values.append(x_values_extended[i + 1:n + i + 1])
+
+    y_values = np.array(y_values, dtype=np.float64).T
+
+    return np.array(data[:, 0:1]), y_values
+'''
+

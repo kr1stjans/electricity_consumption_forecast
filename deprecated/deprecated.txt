@@ -1,0 +1,61 @@
+
+'''
+for i in range(2, 7, 1):
+    print('-----------------')
+    print('processing consumer', i)
+    df = DataProcessor.get_single_public_data(i)
+
+    print('baseline')
+    get_rmse(df.copy(), get_baseline_forecast, get_identity_X_y_pair)
+    print('linear regression')
+    get_rmse(df.copy(), get_LR_forecast, DataProcessor.get_LR_transform)
+    print('autoregression')
+    get_rmse(df.copy(), get_AR_forecast, get_identity_X_y_pair)
+    print('random forest')
+    get_rmse(df.copy(), get_random_forest_forecast, DataProcessor.get_LR_transform)
+
+# cross_validate_model(data, get_LSTM_prediction, get_LSTM_transform)
+'''
+
+
+def timeseries_analysis(data):
+    values = data[:, 0]
+    #
+    # plt.figure()
+    # plt.subplot(211)
+    # plt.plot(data[:, 1], values)
+    #
+    # plt.subplot(212)
+    # plt.hist(values, bins=20)
+    #
+    # plt.show()
+
+    # print('Dickey-Fuller Test')
+    # print(
+    #     'p-value > 0.05: Accept the null hypothesis H0 (the data has a unit root and is non-stationary). It has some time dependent structure.')
+    # print(
+    #     'p-value <= 0.05: Reject the null hypothesis H0, the data does not have a unit root and is stationary. It does not have time-dependent structure.')
+    # dftest = adfuller(values, regression="ctt", maxlag=192)
+    # dfoutput = pd.Series(dftest[0:4], index=['Test Statistic', 'p-value', '#Lags Used', 'Number of Observations Used'])
+    # for key, value in dftest[4].items():
+    #     dfoutput['Critical Value (%s)' % key] = value
+    # print(dfoutput)
+
+    # Determing rolling statistics
+    values_df = pd.DataFrame(values)
+    rolmean = values_df.rolling(window=96 * 7).mean()
+    rolstd = values_df.rolling(window=96 * 7).std()
+
+    plt.figure()
+    # Plot rolling statistics:
+    orig = plt.plot(data[:, 1], values_df, color='blue', label='Original')
+    mean = plt.plot(data[:, 1], rolmean, color='red', label='Rolling Mean')
+    std = plt.plot(data[:, 1], rolstd, color='black', label='Rolling Std')
+    plt.legend(loc='best')
+    plt.show()
+
+
+
+
+
+
